@@ -1,0 +1,154 @@
+#include <stdio.h>
+#include <string.h>
+
+#include<stdbool.h>
+#include<stdlib.h>
+
+#include <opencv2/opencv.hpp>
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+
+
+
+using namespace cv;
+
+void scale(const char* arg3, const char* arg4, const char* arg5, const char* arg6);//-z
+void rotate(const char* arg2, const char* arg3, const char* arg4);//-r
+void mirror(const char* arg2, const char* arg3, const char* arg4);//-m
+
+bool arg_is(const char* arg, const char* long_form, const char* short_form)
+{          //空指针判断
+    return (long_form && strcmp(arg, long_form) == 0) ||
+        (short_form && strcmp(arg, short_form) == 0);
+}
+int main(int argc, char* argv[])
+{
+    //遍历所有的参数
+    for (int i = 1; i < argc; i++) {//跳过第一个参数
+
+        //判断参数中有没有--version或者 -v
+        //argv[i]=="--version"||argv[i]=="-v"
+        if (arg_is(argv[i], "--version", "-v"))
+        {
+            printf("commandline version if 1.0.0\n");
+        }
+        else if (arg_is(argv[i], "--help", "-h"))
+        {
+            const char* help =
+                "--help,-h: Get list of available commands.\n"
+                "--version, -v: Get current version.\n"
+                "imgproc -z -m method some.bmp xxx somenew.bmp 图像放缩操作method 取值为 n，l，c，分别表示最临近插值、双线性插值和三次立方插值 xxx 为 1-999 的百分比数值\n"
+                "imgproc -r some.bmp xxx somenew.bmp 图像旋转操作 xxx 为 0，90，180,270 四个角度之一\n"
+                "imgproc -m some.bmp -v/-h somenew.bmp 图像镜像操作 水平（-h）或垂直镜像（-v）\n";
+            printf("%s", help);
+        }
+
+
+    }
+    if (strcmp(argv[1], "-z") == 0)
+    {
+        //检验参数数量符合要求
+        /*
+        if (argc != 7)
+        {
+            printf("Wrong number of parameters.");
+            return 0;
+        }
+        */
+
+        scale(argv[3], argv[4], argv[5], argv[6]);
+    }
+    else if (strcmp(argv[1], "-r") == 0)
+    {
+        //检验参数数量符合要求
+        /*
+        if (argc != 5)
+        {
+            printf("Wrong number of parameters.");
+            return 0;
+        }
+        */
+
+        rotate(argv[2], argv[3], argv[4]);
+    }
+    else if (strcmp(argv[1], "-m") == 0)
+    {
+        //检验参数数量符合要求
+        /*
+        if (argc != 5)
+        {
+            printf("Wrong number of parameters.");
+            return 0;
+        }
+        */
+
+        mirror(argv[2], argv[3], argv[4]);
+    }
+
+    return 0;
+}
+
+//图像放缩
+void scale(const char* arg3, const char* arg4, const char* arg5, const char* arg6)
+{
+    //读取图像
+    Mat image = imread(arg4);
+
+    //读取放缩系数
+    char* pEnd;
+    double rate = strtod(arg5, &pEnd) / 100;
+
+    Mat img;//定义转换后的图像
+    //读取放缩方法
+    //放缩并储存
+    if (strcmp(arg3, "n") == 0)
+        resize(image, img, Size(0, 0), rate, rate, INTER_NEAREST);//最临近插值
+    else if (strcmp(arg3, "l") == 0)
+        resize(image, img, Size(0, 0), rate, rate, INTER_LINEAR);//双线性插值
+    else if (strcmp(arg3, "c") == 0)
+        resize(image, img, Size(0, 0), rate, rate, INTER_CUBIC);//双三次插值
+    imwrite(arg6, img);
+}
+
+//图像旋转
+void rotate(const char* arg2, const char* arg3, const char* arg4)
+{
+    //读取图像
+    Mat image = imread(arg2);
+
+    //读取旋转角度
+    char* pEnd;
+    double angle = strtod(arg3, &pEnd);
+
+    // 旋转中心点
+    Point2f center(image.cols / 2.0, image.rows / 2.0);
+
+    // 获取旋转后图像的新尺寸
+    //操作与放缩类似，放缩采用fx，fy，也可采用如下的dsize进行
+    double scale = 1.0;
+    Size size = image.size();
+
+    // 获取旋转矩阵（包含旋转变换）
+    Mat rotMat = getRotationMatrix2D(center, angle, scale);
+
+    // 执行旋转并储存
+    Mat img;
+    warpAffine(image, img, rotMat, size);
+    imwrite(arg4, img);
+}
+
+//图像镜像
+void mirror(const char* arg2, const char* arg3, const char* arg4)
+{
+    //读取图像
+    Mat image = imread(arg2);
+
+    Mat img;//定义转换后的图像
+    //读取镜像方式
+    //镜像并储存
+    if (strcmp(arg3, "-v") == 0)//垂直
+        flip(image, img, 1);
+    else if (strcmp(arg3, "-v") == 0)//水平
+        flip(image, img, 1);
+    imwrite(arg4, img);
+} 
